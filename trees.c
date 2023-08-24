@@ -38,6 +38,7 @@
 
 #ifdef ZLIB_DEBUG
 #  include <ctype.h>
+#  include <inttypes.h>
 #endif
 
 /* ===========================================================================
@@ -178,7 +179,7 @@ static void gen_trees_header OF(void);
 static void send_bits(deflate_state* s, uint64_t val, int len)
 {
 #ifdef ZLIB_DEBUG
-    Tracevv((stderr," l %2d v %4llx ", len, val));
+    Tracevv((stderr," l %2d v %4" PRIx64 " ", len, val));
     Assert(len > 0 && len <= 64, "invalid length");
     s->bits_sent += len;
 #endif
@@ -761,7 +762,7 @@ static int build_bl_tree(deflate_state *s) {
     }
     /* Update opt_len to include the bit length tree and counts */
     s->opt_len += 3*(max_blindex+1) + 5+5+4;
-    Tracev((stderr, "\ndyn trees: dyn %lld, stat %lld",
+    Tracev((stderr, "\ndyn trees: dyn %" PRId64 ", stat %" PRId64,
             s->opt_len, s->static_len));
 
     return max_blindex;
@@ -787,13 +788,13 @@ static void send_all_trees(deflate_state *s, int lcodes, int dcodes,
         Tracev((stderr, "\nbl code %2d ", bl_order[rank]));
         send_bits(s, s->bl_tree[bl_order[rank]].Len, 3);
     }
-    Tracev((stderr, "\nbl tree: sent %lld", s->bits_sent));
+    Tracev((stderr, "\nbl tree: sent %" PRId64, s->bits_sent));
 
     send_tree(s, (ct_data *)s->dyn_ltree, lcodes-1); /* literal tree */
-    Tracev((stderr, "\nlit tree: sent %lld", s->bits_sent));
+    Tracev((stderr, "\nlit tree: sent %" PRId64, s->bits_sent));
 
     send_tree(s, (ct_data *)s->dyn_dtree, dcodes-1); /* distance tree */
-    Tracev((stderr, "\ndist tree: sent %lld", s->bits_sent));
+    Tracev((stderr, "\ndist tree: sent %" PRId64, s->bits_sent));
 }
 
 /* ===========================================================================
@@ -848,11 +849,11 @@ void ZLIB_INTERNAL _tr_flush_block(deflate_state *s, uint8_t *buf, /* input bloc
 
         /* Construct the literal and distance trees */
         build_tree(s, (tree_desc *)(&(s->l_desc)));
-        Tracev((stderr, "\nlit data: dyn %lld, stat %lld", s->opt_len,
+        Tracev((stderr, "\nlit data: dyn %" PRId64 ", stat %" PRId64, s->opt_len,
                 s->static_len));
 
         build_tree(s, (tree_desc *)(&(s->d_desc)));
-        Tracev((stderr, "\ndist data: dyn %lld, stat %lld", s->opt_len,
+        Tracev((stderr, "\ndist data: dyn %" PRId64 ", stat %" PRId64, s->opt_len,
                 s->static_len));
         /* At this point, opt_len and static_len are the total bit lengths of
          * the compressed block data, excluding the tree representations.
@@ -867,7 +868,7 @@ void ZLIB_INTERNAL _tr_flush_block(deflate_state *s, uint8_t *buf, /* input bloc
         opt_lenb = (s->opt_len+3+7)>>3;
         static_lenb = (s->static_len+3+7)>>3;
 
-        Tracev((stderr, "\nopt %llu(%llu) stat %llu(%llu) stored %llu lit %u ",
+        Tracev((stderr, "\nopt %" PRIu64 "(%" PRIu64 ") stat %" PRIu64 "(%" PRIu64 ") stored %" PRIu64 " lit %u ",
                 opt_lenb, s->opt_len, static_lenb, s->static_len, stored_len,
                 s->sym_next / 3));
 
@@ -921,7 +922,7 @@ void ZLIB_INTERNAL _tr_flush_block(deflate_state *s, uint8_t *buf, /* input bloc
         s->compressed_len += 7;  /* align on byte boundary */
 #endif
     }
-    Tracev((stderr,"\ncomprlen %llu(%llu) ", s->compressed_len>>3,
+    Tracev((stderr,"\ncomprlen %" PRIu64 "(%" PRIu64 ") ", s->compressed_len>>3,
            s->compressed_len-7*last));
 }
 
@@ -976,7 +977,7 @@ static void compress_block(deflate_state *s, const ct_data *ltree, /* literal tr
             uint64_t val = ltree[lc].Code;
             int len = ltree[lc].Len;
 #ifdef ZLIB_DEBUG
-            Tracevv((stderr," l %2d v %4llx ", len, val));
+            Tracevv((stderr," l %2d v %4" PRIx64 " ", len, val));
             Assert(len > 0 && len <= 64, "invalid length");
             s->bits_sent += len;
 #endif
@@ -1000,7 +1001,7 @@ static void compress_block(deflate_state *s, const ct_data *ltree, /* literal tr
             val = ltree[code+LITERALS+1].Code;
             len = ltree[code+LITERALS+1].Len;
 #ifdef ZLIB_DEBUG
-            Tracevv((stderr," l %2d v %4llx ", len, val));
+            Tracevv((stderr," l %2d v %4" PRIx64 " ", len, val));
             Assert(len > 0 && len <= 64, "invalid length");
             s->bits_sent += len;
 #endif
@@ -1019,7 +1020,7 @@ static void compress_block(deflate_state *s, const ct_data *ltree, /* literal tr
                 val = lc;
                 len = extra;
 #ifdef ZLIB_DEBUG
-                Tracevv((stderr," l %2d v %4llx ", len, val));
+                Tracevv((stderr," l %2d v %4" PRIx64 " ", len, val));
                 Assert(len > 0 && len <= 64, "invalid length");
                 s->bits_sent += len;
 #endif
@@ -1039,7 +1040,7 @@ static void compress_block(deflate_state *s, const ct_data *ltree, /* literal tr
             val = dtree[code].Code;
             len = dtree[code].Len;
 #ifdef ZLIB_DEBUG
-            Tracevv((stderr," l %2d v %4llx ", len, val));
+            Tracevv((stderr," l %2d v %4" PRIx64 " ", len, val));
             Assert(len > 0 && len <= 64, "invalid length");
             s->bits_sent += len;
 #endif
@@ -1061,7 +1062,7 @@ static void compress_block(deflate_state *s, const ct_data *ltree, /* literal tr
                 bit_buf ^= (val << filled);
                 filled += len;
 #ifdef ZLIB_DEBUG
-                Tracevv((stderr," l %2d v %4llx ", len, val));
+                Tracevv((stderr," l %2d v %4" PRIx64 " ", len, val));
                 Assert(len > 0 && len <= 64, "invalid length");
                 s->bits_sent += len;
 #endif
@@ -1083,7 +1084,7 @@ static void compress_block(deflate_state *s, const ct_data *ltree, /* literal tr
     len = ltree[END_BLOCK].Len;
 
 #ifdef ZLIB_DEBUG
-    Tracevv((stderr," l %2d v %4llx ", len, val));
+    Tracevv((stderr," l %2d v %4" PRIx64 " ", len, val));
     Assert(len > 0 && len <= 64, "invalid length");
     s->bits_sent += len;
 #endif
