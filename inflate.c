@@ -84,7 +84,7 @@
 #include "inftrees.h"
 #include "inflate.h"
 
-#if defined(INFLATE_CHUNK_SIMD_NEON) || defined(INFLATE_CHUNK_SIMD_SSE2)
+#if defined(INFLATE_CHUNK_SIMD_NEON) || defined(INFLATE_CHUNK_SIMD_SSE2) || defined(INFLATE_CHUNK_GENERIC)
 #include "inffast_chunk.h"
 #include "chunkcopy.h"
 #else
@@ -390,7 +390,7 @@ static int updatewindow(z_streamp strm, const Bytef *end, unsigned copy) {
 
     /* if it hasn't been done already, allocate space for the window */
     if (state->window == Z_NULL) {
-#if defined(INFLATE_CHUNK_SIMD_NEON) || defined(INFLATE_CHUNK_SIMD_SSE2)
+#if defined(INFLATE_CHUNK_SIMD_NEON) || defined(INFLATE_CHUNK_SIMD_SSE2) || defined(INFLATE_CHUNK_GENERIC)
 	unsigned wsize = 1U << state->wbits;
 	state->window = (unsigned char FAR *)
 			ZALLOC(strm, wsize + CHUNKCOPY_CHUNK_SIZE,
@@ -1061,7 +1061,7 @@ int ZEXPORT inflate(z_streamp strm, int flush) {
             if (have >= INFLATE_FAST_MIN_INPUT &&
                 left >= INFLATE_FAST_MIN_OUTPUT) {
                 RESTORE();
-#if defined(INFLATE_CHUNK_SIMD_NEON) || defined(INFLATE_CHUNK_SIMD_SSE2)
+#if defined(INFLATE_CHUNK_SIMD_NEON) || defined(INFLATE_CHUNK_SIMD_SSE2) || defined(INFLATE_CHUNK_GENERIC)
                 inflate_fast_chunk_(strm, out);
 #else
                 inflate_fast(strm, out);
@@ -1200,7 +1200,7 @@ int ZEXPORT inflate(z_streamp strm, int flush) {
                 else
                     from = state->window + (state->wnext - copy);
                 if (copy > state->length) copy = state->length;
-#if defined(INFLATE_CHUNK_SIMD_NEON) || defined(INFLATE_CHUNK_SIMD_SSE2)
+#if defined(INFLATE_CHUNK_SIMD_NEON) || defined(INFLATE_CHUNK_SIMD_SSE2) || defined(INFLATE_CHUNK_GENERIC)
                 if (copy > left) copy = left;
                 put = chunkcopy_safe(put, from, copy, put + left);
             }
@@ -1292,7 +1292,7 @@ int ZEXPORT inflate(z_streamp strm, int flush) {
        Note: a memory error from inflate() is non-recoverable.
      */
   inf_leave:
-#if defined(ZLIB_DEBUG) && (defined(INFLATE_CHUNK_SIMD_NEON) || defined(INFLATE_CHUNK_SIMD_SSE2))
+#if defined(ZLIB_DEBUG) && (defined(INFLATE_CHUNK_SIMD_NEON) || defined(INFLATE_CHUNK_SIMD_SSE2) || defined(INFLATE_CHUNK_GENERIC))
     /* XXX(cavalcantii): I put this in place back in 2017 to help debug faulty
     * client code relying on undefined behavior when chunk_copy first landed.
     *

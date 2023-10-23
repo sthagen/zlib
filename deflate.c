@@ -137,7 +137,7 @@ static uint32_t hash_func(deflate_state *s, void* str) {
     return __crc32cw(0, *(uint32_t*)str) & s->hash_mask;
 }
 
-#elif defined __x86_64__ || defined _M_AMD64
+#elif defined HAS_SSE42
 
 #include <immintrin.h>
 static uint32_t hash_func(deflate_state *s, void* str) {
@@ -146,7 +146,14 @@ static uint32_t hash_func(deflate_state *s, void* str) {
 
 #else
 
-#error "Only 64-bit Intel and ARM architectures are supported"
+static uint32_t hash_func(deflate_state *s, void* str) {
+    uint32_t w;
+    zmemcpy(&w, str, sizeof(w));
+    // generic multiply-xor hash, using some magic numbers from xxhash.
+    w *= 0x85ebca77u;
+    w ^= w >> 19;
+    return w & s->hash_mask;
+}
 
 #endif
 
@@ -1329,7 +1336,7 @@ static void fill_window(deflate_state *s)
                 q+=8;
             }
 
-#elif defined __x86_64__ || defined _M_AMD64
+#elif defined HAS_SSE2
 
             __m128i  W;
             __m128i *q;
